@@ -52,8 +52,10 @@ class FocusLockAccessibilityService : AccessibilityService() {
             
             if (keyCode == KeyEvent.KEYCODE_BACK || 
                 keyCode == KeyEvent.KEYCODE_HOME || 
-                keyCode == KeyEvent.KEYCODE_APP_SWITCH) {
-                return true // Consume the event
+                keyCode == KeyEvent.KEYCODE_APP_SWITCH ||
+                keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
+                keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
+                return true // Consume the event (Block Volume Down)
             }
         }
         return super.onKeyEvent(event)

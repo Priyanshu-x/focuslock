@@ -13,9 +13,39 @@ class _TimerScreenState extends State<TimerScreen> {
   final DetoxService _service = DetoxService();
 
   @override
+  void initState() {
+    super.initState();
+    _checkPermissions();
+  }
+
+  @override
   void dispose() {
     _timerController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkPermissions() async {
+    // Check all permissions
+    bool overlay = await _service.checkOverlayPermission();
+    bool admin = await _service.isAdminActive();
+    bool accessibility = await _service.isAccessibilityEnabled();
+
+    if (!overlay || !admin || !accessibility) {
+      if (mounted) _showSetupDialog(overlay, admin, accessibility);
+    }
+  }
+
+  void _showSetupDialog(bool overlay, bool admin, bool accessibility) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _SetupDialog(
+        service: _service,
+        initialOverlay: overlay,
+        initialAdmin: admin,
+        initialAccessibility: accessibility,
+      ),
+    );
   }
 
   void _startCustomDetox() {
@@ -37,33 +67,6 @@ class _TimerScreenState extends State<TimerScreen> {
         minimumSize: const Size(100, 40),
       ),
       child: Text('$minutes min', style: const TextStyle(color: Colors.white)),
-    );
-  }
-
-  Future<void> _checkPermissions() async {
-    bool hasOverlay = await _service.checkOverlayPermission();
-    if (!hasOverlay) {
-      if (mounted) _showPermissionDialog();
-    }
-  }
-
-  void _showPermissionDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text("Permission Required"),
-        content: const Text("To prevent 'Floating Window' monitoring, FocusLock needs 'Display over other apps' permission."),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _service.requestOverlayPermission();
-            },
-            child: const Text("Grant Permission"),
-          ),
-        ],
-      ),
     );
   }
 
@@ -115,7 +118,7 @@ class _TimerScreenState extends State<TimerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Explicit black background (Step 14)
+      backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -142,7 +145,7 @@ class _TimerScreenState extends State<TimerScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                'Digital Detox', // Original Title
+                'Digital Detox',
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
@@ -154,10 +157,10 @@ class _TimerScreenState extends State<TimerScreen> {
                 controller: _timerController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Enter detox time (minutes)', // Original label
+                  labelText: 'Enter detox time (minutes)',
                   border: OutlineInputBorder(),
                   filled: true,
-                  fillColor: Colors.white24, // Original fill
+                  fillColor: Colors.white24,
                   labelStyle: TextStyle(color: Colors.white70),
                 ),
                 style: const TextStyle(color: Colors.white),
@@ -169,23 +172,18 @@ class _TimerScreenState extends State<TimerScreen> {
                 alignment: WrapAlignment.center,
                 children: [
                   _buildPresetButton(5),
-                  _buildPresetButton(10), // Original buttons had 10
+                  _buildPresetButton(10),
                   _buildPresetButton(15),
                   _buildPresetButton(30),
                   _buildPresetButton(60),
-                  _buildPresetButton(120), // Original had 120
+                  _buildPresetButton(120),
                 ],
               ),
               const SizedBox(height: 20),
-              
-              const SizedBox(height: 10),
-
-              const SizedBox(height: 30),
-
               ElevatedButton(
                 onPressed: _startCustomDetox,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 134, 103, 192), // Original color
+                  backgroundColor: const Color.fromARGB(255, 134, 103, 192),
                   minimumSize: const Size(150, 50),
                 ),
                 child: const Text('Start Custom Detox', style: TextStyle(color: Colors.white)),
@@ -194,7 +192,7 @@ class _TimerScreenState extends State<TimerScreen> {
               ElevatedButton(
                 onPressed: () => _service.enableDeviceAdmin(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueGrey, // Original color
+                  backgroundColor: Colors.blueGrey,
                   minimumSize: const Size(150, 50),
                 ),
                 child: const Text('Enable Device Admin', style: TextStyle(color: Colors.white)),
@@ -204,6 +202,128 @@ class _TimerScreenState extends State<TimerScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SetupDialog extends StatefulWidget {
+  final DetoxService service;
+  final bool initialOverlay;
+  final bool initialAdmin;
+  final bool initialAccessibility;
+
+  const _SetupDialog({
+    required this.service,
+    required this.initialOverlay,
+    required this.initialAdmin,
+    required this.initialAccessibility,
+  });
+
+  @override
+  State<_SetupDialog> createState() => _SetupDialogState();
+}
+
+class _SetupDialogState extends State<_SetupDialog> with WidgetsBindingObserver {
+  late bool overlay;
+  late bool admin;
+  late bool accessibility;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    overlay = widget.initialOverlay;
+    admin = widget.initialAdmin;
+    accessibility = widget.initialAccessibility;
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshStatus();
+    }
+  }
+
+  Future<void> _refreshStatus() async {
+    final o = await widget.service.checkOverlayPermission();
+    final ad = await widget.service.isAdminActive();
+    final ac = await widget.service.isAccessibilityEnabled();
+    if (mounted) {
+      setState(() {
+        overlay = o;
+        admin = ad;
+        accessibility = ac;
+      });
+    }
+  }
+
+  Widget _buildStep(String title, String subtitle, bool isDone, VoidCallback onAction) {
+    return ListTile(
+      leading: Icon(
+        isDone ? Icons.check_circle : Icons.error_outline,
+        color: isDone ? Colors.green : Colors.red,
+      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+      trailing: isDone 
+          ? null 
+          : ElevatedButton(
+              onPressed: onAction,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(60, 30),
+              ),
+              child: const Text("Fix"),
+            ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    bool allDone = overlay && admin && accessibility;
+
+    return AlertDialog(
+      title: const Text("Required Setup"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildStep(
+            "1. Allow Overlays", 
+            "Required to block floating windows.", 
+            overlay, 
+            () => widget.service.requestOverlayPermission(),
+          ),
+          const Divider(),
+          _buildStep(
+            "2. Enable Device Admin", 
+            "Required to lock the screen.", 
+            admin, 
+            () => widget.service.enableDeviceAdmin(),
+          ),
+          const Divider(),
+          _buildStep(
+            "3. Enable Accessibility", 
+            "Go to Downloaded Apps > FocusLock > ON.", 
+            accessibility, 
+            () => widget.service.openAccessibilitySettings(),
+          ),
+        ],
+      ),
+      actions: [
+        
+          TextButton(
+            onPressed: allDone ? () => Navigator.pop(context) : null,
+            child: Text("Done! Let's Go", style: TextStyle(color: allDone ? Colors.blue : Colors.grey)),
+          )
+        
+      ],
     );
   }
 }

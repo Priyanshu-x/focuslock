@@ -103,14 +103,19 @@ class DetoxService extends ChangeNotifier {
     if (_activeModes.contains(DetoxMode.gravity)) {
       _startGravityCheck();
     }
+    
+    // Force Max Volume
+    await setMaxVolume();
 
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingSeconds <= 0) {
-        stopDetox();
-      } else {
+      if (_remainingSeconds > 0) {
         _remainingSeconds--;
+        // Enforce Max Volume consistently
+        setMaxVolume(); // Volume Guardian
         notifyListeners();
+      } else {
+        stopDetox();
       }
     });
   }
@@ -194,15 +199,7 @@ class DetoxService extends ChangeNotifier {
     });
   }
 
-  Future<void> enableDeviceAdmin() async {
-    // Now effectively "Enable Accessibility"
-    try {
-       // Open Accessibility Settings
-       await platform.invokeMethod('openAccessibilitySettings');
-    } on PlatformException catch (e) {
-      debugPrint("Failed to open accessibility settings: '${e.message}'.");
-    }
-  }
+
 
   Future<void> setBackGestureExclusion() async {
     try {
@@ -251,6 +248,42 @@ class DetoxService extends ChangeNotifier {
       await platform.invokeMethod('requestOverlayPermission');
     } catch (e) {
       debugPrint("Permission Request Error: $e");
+    }
+  }
+
+  Future<void> setMaxVolume() async {
+    await platform.invokeMethod('setMaxVolume');
+  }
+
+  Future<bool> isAdminActive() async {
+    try {
+      return await platform.invokeMethod('isAdminActive') ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> isAccessibilityEnabled() async {
+    try {
+      return await platform.invokeMethod('isAccessibilityEnabled') ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> openAccessibilitySettings() async {
+    try {
+      await platform.invokeMethod('openAccessibilitySettings');
+    } catch (e) {
+      debugPrint("Settings Error: $e");
+    }
+  }
+
+  Future<void> enableDeviceAdmin() async {
+    try {
+      await platform.invokeMethod('enableDeviceAdmin');
+    } catch (e) {
+      debugPrint("Admin Error: $e");
     }
   }
 

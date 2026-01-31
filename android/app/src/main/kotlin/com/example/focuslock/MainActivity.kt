@@ -149,15 +149,46 @@ class MainActivity : FlutterActivity() {
                         result.success(true)
                     }
                 }
+                "maxVolume" -> { // Alias fix if needed, or just keep setMaxVolume
+                     // ...
+                }
                 "requestOverlayPermission" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, 
-                                            android.net.Uri.parse("package:$packageName"))
-                        startActivity(intent)
+                        try {
+                            // Try specific package
+                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, 
+                                                android.net.Uri.parse("package:$packageName"))
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            // Fallback to generic list
+                            try {
+                                val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(intent)
+                            } catch (e2: Exception) {
+                                // Failed completely
+                                android.util.Log.e(CHANNEL, "Failed to open overlay settings: $e2")
+                            }
+                        }
                         result.success(null)
                     } else {
                         result.success(null)
                     }
+                }
+                "isAdminActive" -> {
+                    result.success(devicePolicyManager.isAdminActive(adminComponentName))
+                }
+                "isAccessibilityEnabled" -> {
+                    val enabledServices = android.provider.Settings.Secure.getString(contentResolver, android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+                    val componentName = ComponentName(this, FocusLockAccessibilityService::class.java).flattenToString()
+                    result.success(enabledServices?.contains(componentName) == true)
+                }
+                "setMaxVolume" -> {
+                    val audioManager = getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+                    val maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
+                    audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, maxVolume, 0)
+                    result.success(null)
                 }
                 else -> {
                     result.notImplemented()
