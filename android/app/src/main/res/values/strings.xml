@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="device_admin_label">FocusLock Device Administrator</string>
+    <string name="device_admin_description">FocusLock needs device administrator privileges to prevent you from closing the app during a detox session. This ensures you stay focused and achieve your digital detox goals.</string>
+</resources>
