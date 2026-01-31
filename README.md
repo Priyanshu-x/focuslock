@@ -9,10 +9,10 @@
 FocusLock is a high-security productivity application engineered to enforce genuine digital disconnects. Unlike standard blocking apps that are easily bypassed via task managers or system gestures, FocusLock leverages low-level Android APIs and a specialized hybrid architecture to ensure total compliance during detox sessions.
 
 ## 📸 Functionality Gallery
-| Setup Checklist | Detox Timer | Lock Screen |
-|:---:|:---:|:---:|
-| ![Setup Checklist](screenshots/setup.png) | ![Timer Screen](screenshots/timer.png) | ![Lock Screen](screenshots/lock.png) |
-| *Ensures Permissions* | *Set your goal* | *No Escape* |
+| Setup Checklist | Detox Timer | Penalty Modes | Lock Screen |
+|:---:|:---:|:---:|:---:|
+| ![Setup Checklist](screenshots/setup.png) | ![Timer Screen](screenshots/timer.png) | ![Penalty Modes](screenshots/modes.png) | ![Lock Screen](screenshots/lock.png) |
+| *Ensures Permissions* | *Set your goal* | *Choose your trap* | *No Escape* |
 
 ---
 
