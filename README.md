@@ -1,7 +1,5 @@
 # FocusLock 🛡️📵
 
-![FocusLock Hero Banner](hero_banner.png)
-
 > **The Unescapable Digital Detox Solution**
 
 [![Download APK](https://img.shields.io/badge/Download-FocusLock_v1.0.apk-purple?style=for-the-badge&logo=android)](FocusLock.apk)
